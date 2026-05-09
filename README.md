@@ -20,6 +20,12 @@ VoxBridge captures audio from one device, streams it to the OpenAI Realtime API,
 
 ---
 
+## 💸 Cost-Efficiency
+
+VoxBridge uses the newest [gpt-realtime-translate](https://developers.openai.com/api/docs/models/gpt-realtime-translate) model directly with your own API key. Because you pay OpenAI directly without any intermediaries, the pricing is incredibly low—a typical one-hour conversation on Zoom will cost you only about **$2-4**!
+
+---
+
 ## 🛠️ Typical Routing Setup
 
 VoxBridge sits between your physical devices and your call application (Zoom, Discord, Teams, etc.).
@@ -117,6 +123,14 @@ pyinstaller VoxBridge.spec
 ```
 
 The standalone application will be generated in the `dist/` folder.
+
+---
+
+## ☕ Support the Project
+
+If you find VoxBridge useful, consider buying me a coffee to support further development:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ml_jedi)
 
 ---
 
