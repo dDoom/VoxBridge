@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "voxbridge"
+version = "0.1.0"
+description = "Cross-platform GUI realtime speech translator for virtual audio routing."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "PySide6>=6.7",
+    "sounddevice>=0.4.6",
+    "websockets>=12.0,<16",
+]
+
+[project.optional-dependencies]
+build = [
+    "pyinstaller>=6.6",
+]
+
+[project.scripts]
+voxbridge = "voxbridge.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["voxbridge*"]
