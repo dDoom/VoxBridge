@@ -1,6 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+
 block_cipher = None
+icon_file = 'assets/icon.ico' if sys.platform == 'win32' else None
 
 a = Analysis(
     ["voxbridge/__main__.py"],
@@ -25,7 +28,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name="VoxBridge",
-    icon='assets/icon.ico',
+    icon=icon_file,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
