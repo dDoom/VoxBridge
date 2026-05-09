@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import os
+import sys
 from datetime import datetime
 
 import numpy as np
 import sounddevice as sd
 from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -31,6 +33,13 @@ from .config import DEFAULT_MODEL, TRANSLATION_LANGUAGES, BridgeConfig, RouteCon
 
 
 SOURCE_LANGUAGES = [("Auto detect", "auto"), *TRANSLATION_LANGUAGES]
+
+
+def get_asset_path(filename: str) -> str:
+    """Get absolute path to asset, works for dev and for PyInstaller"""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, "assets", filename)
+    return os.path.join(os.path.dirname(__file__), "..", "assets", filename)
 
 
 class BridgeSignals(QObject):
@@ -266,6 +275,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("VoxBridge")
+        self.setWindowIcon(QIcon(get_asset_path("icon.png")))
         self.resize(980, 720)
         self.signals = BridgeSignals()
         self.signals.status.connect(self._append_status)
