@@ -10,6 +10,10 @@
 
 VoxBridge captures audio from one device, streams it to the OpenAI Realtime API, and plays the translated speech into another device. It can run two directions at once, making it the perfect bridge for call setups built around a virtual speaker and a virtual microphone.
 
+<p align="center">
+  <img src="assets/ui-screenshot.png" alt="VoxBridge desktop UI" width="100%">
+</p>
+
 ## 🚀 Features
 
 - **Cross-platform GUI**: Built with PySide6 for Windows, macOS, and Linux.
@@ -31,6 +35,21 @@ VoxBridge uses the newest [gpt-realtime-translate](https://developers.openai.com
 VoxBridge sits between your physical devices and your call application (Zoom, Discord, Teams, etc.).
 
 For a typical English ↔ Russian call:
+
+```mermaid
+flowchart LR
+    CallOut["Call app speaker output"] --> VirtualSpeaker["Virtual speaker"]
+    VirtualSpeaker --> RouteA["VoxBridge Direction A"]
+    RouteA --> Headphones["Real headphones"]
+
+    Mic["Real microphone"] --> RouteB["VoxBridge Direction B"]
+    RouteB --> VirtualMic["Virtual microphone"]
+    VirtualMic --> CallIn["Call app microphone input"]
+
+    RouteA <--> OpenAI["OpenAI Realtime API"]
+    RouteB <--> OpenAI
+```
+
 1. Configure your **Call App speaker output** to a Virtual Speaker.
 2. Configure your **Call App microphone input** to a Virtual Microphone.
 3. In **VoxBridge Direction A**: Capture the Virtual Speaker and play the translated audio to your Real Headphones.
