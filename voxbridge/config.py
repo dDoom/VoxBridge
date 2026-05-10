@@ -28,7 +28,8 @@ class RouteConfig:
     name: str
     enabled: bool
     input_device: int
-    output_device: int
+    output_device: int | None
+    audio_output_enabled: bool
     source_language: str
     target_language: str
 

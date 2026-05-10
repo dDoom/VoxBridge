@@ -113,8 +113,11 @@ class RouteWidget(QGroupBox):
         self.route_name = route_name
         self.enabled = QCheckBox("Enabled")
         self.enabled.setChecked(True)
+        self.audio_output_enabled = QCheckBox("Play translated audio")
+        self.audio_output_enabled.setChecked(True)
         self.input_device = QComboBox()
         self.output_device = QComboBox()
+        self.output_label = QLabel("Play to")
         self.source_language = QComboBox()
         self.target_language = QComboBox()
         self.level_meter = QProgressBar()
@@ -134,12 +137,15 @@ class RouteWidget(QGroupBox):
         layout.addRow("Capture from", self.input_device)
         layout.addRow("Input level", self.level_meter)
         layout.addRow("", self.level_status)
-        layout.addRow("Play to", self.output_device)
+        layout.addRow(self.audio_output_enabled)
+        layout.addRow(self.output_label, self.output_device)
         layout.addRow("Source language", self.source_language)
         layout.addRow("Target language", self.target_language)
         self.level_monitor.level_changed.connect(self.level_meter.setValue)
         self.level_monitor.state_changed.connect(self.level_status.setText)
         self.input_device.currentIndexChanged.connect(self.restart_meter)
+        self.audio_output_enabled.toggled.connect(self._sync_output_controls)
+        self._sync_output_controls()
 
     def set_devices(self, inputs: list[AudioDevice], outputs: list[AudioDevice]) -> None:
         selected_input = self.input_device.currentData()
@@ -172,21 +178,32 @@ class RouteWidget(QGroupBox):
                 name=self.route_name,
                 enabled=False,
                 input_device=int(self.input_device.currentData() or -1),
-                output_device=int(self.output_device.currentData() or -1),
+                output_device=(
+                    int(self.output_device.currentData())
+                    if self.output_device.currentData() is not None
+                    else None
+                ),
+                audio_output_enabled=self.audio_output_enabled.isChecked(),
                 source_language=str(self.source_language.currentData()),
                 target_language=str(self.target_language.currentData()),
             )
 
         if self.input_device.currentData() is None:
             raise ValueError(f"{self.route_name}: select an input device")
-        if self.output_device.currentData() is None:
+        audio_output_enabled = self.audio_output_enabled.isChecked()
+        if audio_output_enabled and self.output_device.currentData() is None:
             raise ValueError(f"{self.route_name}: select an output device")
 
         return RouteConfig(
             name=self.route_name,
             enabled=enabled,
             input_device=int(self.input_device.currentData()),
-            output_device=int(self.output_device.currentData()),
+            output_device=(
+                int(self.output_device.currentData())
+                if audio_output_enabled and self.output_device.currentData() is not None
+                else None
+            ),
+            audio_output_enabled=audio_output_enabled,
             source_language=str(self.source_language.currentData()),
             target_language=str(self.target_language.currentData()),
         )
@@ -198,6 +215,11 @@ class RouteWidget(QGroupBox):
         index = combo.findData(value)
         if index >= 0:
             combo.setCurrentIndex(index)
+
+    def _sync_output_controls(self) -> None:
+        enabled = self.audio_output_enabled.isChecked()
+        self.output_label.setEnabled(enabled)
+        self.output_device.setEnabled(enabled)
 
 
 class TranscriptWidget(QGroupBox):
@@ -374,6 +396,13 @@ class MainWindow(QMainWindow):
             }
             QComboBox, QLineEdit {
                 min-height: 30px;
+            }
+            QComboBox:disabled {
+                color: palette(mid);
+                background: palette(window);
+            }
+            QLabel:disabled {
+                color: palette(mid);
             }
             QProgressBar {
                 border: 1px solid palette(mid);

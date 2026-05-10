@@ -26,7 +26,11 @@ class TranslationRoute:
         self.route = route
         self.status = status
         self.capture = MicrophoneCapture(route.input_device)
-        self.output = SpeakerOutput(route.output_device)
+        self.output = (
+            SpeakerOutput(route.output_device)
+            if route.audio_output_enabled and route.output_device is not None
+            else None
+        )
         self.translator = RealtimeTranslator(
             api_key=api_key,
             model=model,
@@ -39,17 +43,27 @@ class TranslationRoute:
     async def run(self, stop_event: asyncio.Event) -> None:
         self.status(f"{self.route.name}: starting audio devices")
         self.capture.start()
-        self.output.start()
+        if self.output is not None:
+            self.output.start()
+            on_audio = self.output.play_api_audio
+        else:
+            self.status(f"{self.route.name}: audio playback disabled")
+            on_audio = self._discard_audio
         try:
             await self.translator.run(
                 self.capture.frames(),
-                self.output.play_api_audio,
+                on_audio,
                 stop_event,
             )
         finally:
             self.capture.close()
-            self.output.close()
+            if self.output is not None:
+                self.output.close()
             self.status(f"{self.route.name}: stopped")
+
+    @staticmethod
+    async def _discard_audio(data: bytes) -> None:
+        _ = data
 
 
 class BridgeRunner:
