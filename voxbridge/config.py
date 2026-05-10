@@ -30,6 +30,7 @@ class RouteConfig:
     input_device: int
     output_device: int | None
     audio_output_enabled: bool
+    original_audio_volume: int
     source_language: str
     target_language: str
 

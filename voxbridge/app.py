@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QPlainTextEdit,
     QProgressBar,
+    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -115,6 +116,10 @@ class RouteWidget(QGroupBox):
         self.enabled.setChecked(True)
         self.audio_output_enabled = QCheckBox("Play translated audio")
         self.audio_output_enabled.setChecked(True)
+        self.original_audio_volume = QSpinBox()
+        self.original_audio_volume.setRange(0, 100)
+        self.original_audio_volume.setSuffix("%")
+        self.original_audio_volume.setValue(0)
         self.input_device = QComboBox()
         self.output_device = QComboBox()
         self.output_label = QLabel("Play to")
@@ -138,13 +143,15 @@ class RouteWidget(QGroupBox):
         layout.addRow("Input level", self.level_meter)
         layout.addRow("", self.level_status)
         layout.addRow(self.audio_output_enabled)
+        layout.addRow("Original passthrough", self.original_audio_volume)
         layout.addRow(self.output_label, self.output_device)
         layout.addRow("Source language", self.source_language)
         layout.addRow("Target language", self.target_language)
         self.level_monitor.level_changed.connect(self.level_meter.setValue)
         self.level_monitor.state_changed.connect(self.level_status.setText)
         self.input_device.currentIndexChanged.connect(self.restart_meter)
-        self.audio_output_enabled.toggled.connect(self._sync_output_controls)
+        self.audio_output_enabled.toggled.connect(self._audio_output_toggled)
+        self.original_audio_volume.valueChanged.connect(self._sync_output_controls)
         self._sync_output_controls()
 
     def set_devices(self, inputs: list[AudioDevice], outputs: list[AudioDevice]) -> None:
@@ -184,6 +191,7 @@ class RouteWidget(QGroupBox):
                     else None
                 ),
                 audio_output_enabled=self.audio_output_enabled.isChecked(),
+                original_audio_volume=self.original_audio_volume.value(),
                 source_language=str(self.source_language.currentData()),
                 target_language=str(self.target_language.currentData()),
             )
@@ -191,7 +199,9 @@ class RouteWidget(QGroupBox):
         if self.input_device.currentData() is None:
             raise ValueError(f"{self.route_name}: select an input device")
         audio_output_enabled = self.audio_output_enabled.isChecked()
-        if audio_output_enabled and self.output_device.currentData() is None:
+        original_audio_volume = self.original_audio_volume.value()
+        needs_output = audio_output_enabled or original_audio_volume > 0
+        if needs_output and self.output_device.currentData() is None:
             raise ValueError(f"{self.route_name}: select an output device")
 
         return RouteConfig(
@@ -200,10 +210,11 @@ class RouteWidget(QGroupBox):
             input_device=int(self.input_device.currentData()),
             output_device=(
                 int(self.output_device.currentData())
-                if audio_output_enabled and self.output_device.currentData() is not None
+                if needs_output and self.output_device.currentData() is not None
                 else None
             ),
             audio_output_enabled=audio_output_enabled,
+            original_audio_volume=original_audio_volume,
             source_language=str(self.source_language.currentData()),
             target_language=str(self.target_language.currentData()),
         )
@@ -217,9 +228,17 @@ class RouteWidget(QGroupBox):
             combo.setCurrentIndex(index)
 
     def _sync_output_controls(self) -> None:
-        enabled = self.audio_output_enabled.isChecked()
-        self.output_label.setEnabled(enabled)
-        self.output_device.setEnabled(enabled)
+        needs_output = (
+            self.audio_output_enabled.isChecked()
+            or self.original_audio_volume.value() > 0
+        )
+        self.output_label.setEnabled(needs_output)
+        self.output_device.setEnabled(needs_output)
+
+    def _audio_output_toggled(self, checked: bool) -> None:
+        if not checked and self.original_audio_volume.value() == 0:
+            self.original_audio_volume.setValue(100)
+        self._sync_output_controls()
 
 
 class TranscriptWidget(QGroupBox):
@@ -394,7 +413,7 @@ class MainWindow(QMainWindow):
                 min-height: 34px;
                 padding: 0 16px;
             }
-            QComboBox, QLineEdit {
+            QComboBox, QLineEdit, QSpinBox {
                 min-height: 30px;
             }
             QComboBox:disabled {

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import threading
 import traceback
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 
 from .audio import MicrophoneCapture, SpeakerOutput
 from .config import BridgeConfig, RouteConfig
@@ -28,7 +28,10 @@ class TranslationRoute:
         self.capture = MicrophoneCapture(route.input_device)
         self.output = (
             SpeakerOutput(route.output_device)
-            if route.audio_output_enabled and route.output_device is not None
+            if (
+                route.output_device is not None
+                and (route.audio_output_enabled or route.original_audio_volume > 0)
+            )
             else None
         )
         self.translator = RealtimeTranslator(
@@ -45,13 +48,23 @@ class TranslationRoute:
         self.capture.start()
         if self.output is not None:
             self.output.start()
-            on_audio = self.output.play_api_audio
+            on_audio = (
+                self.output.play_api_audio
+                if self.route.audio_output_enabled
+                else self._discard_audio
+            )
         else:
-            self.status(f"{self.route.name}: audio playback disabled")
             on_audio = self._discard_audio
+        if not self.route.audio_output_enabled:
+            self.status(f"{self.route.name}: translated audio playback disabled")
+        if self.route.original_audio_volume > 0:
+            self.status(
+                f"{self.route.name}: passing through original audio at "
+                f"{self.route.original_audio_volume}%"
+            )
         try:
             await self.translator.run(
-                self.capture.frames(),
+                self._frames(),
                 on_audio,
                 stop_event,
             )
@@ -64,6 +77,12 @@ class TranslationRoute:
     @staticmethod
     async def _discard_audio(data: bytes) -> None:
         _ = data
+
+    async def _frames(self) -> AsyncIterator[bytes]:
+        async for frame in self.capture.frames():
+            if self.output is not None and self.route.original_audio_volume > 0:
+                await self.output.play_original_audio(frame, self.route.original_audio_volume)
+            yield frame
 
 
 class BridgeRunner:

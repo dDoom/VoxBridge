@@ -77,7 +77,7 @@ For a typical English ↔ Russian call:
 - **Bi-directional Translation**: Run two independent translation routes simultaneously.
 - **Low Latency streaming**: Powered by the OpenAI Realtime Translation WebSocket API.
 - **Automatic Language Detection**: Translates source language seamlessly.
-- **Subtitle-only mode**: Disable translated audio playback per direction and use transcripts only.
+- **Subtitle-only mode**: Disable translated audio playback per direction, keep transcripts, and pass through the original audio at a configurable volume.
 - **Local Audio Routing**: Deep integration with PortAudio/sounddevice to pipe audio anywhere.
 - **Standalone Executables**: Download `.exe` (Windows), `.app` (macOS), or `.tar.gz` (Linux) — no Python needed.
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import threading
+from collections import deque
 from dataclasses import dataclass
 from typing import AsyncIterator
 
@@ -121,6 +123,10 @@ class SpeakerOutput:
         self.device_index = device_index
         self.sample_rate = sample_rate or default_sample_rate(device_index)
         self._stream: sd.RawOutputStream | None = None
+        self._translated: deque[np.ndarray] = deque()
+        self._original: deque[np.ndarray] = deque()
+        self._lock = threading.Lock()
+        self._max_buffer_samples = self.sample_rate * 3
 
     def start(self) -> None:
         blocksize = max(240, int(self.sample_rate * 0.02))
@@ -130,17 +136,67 @@ class SpeakerOutput:
             device=self.device_index,
             channels=1,
             dtype="int16",
+            callback=self._callback,
         )
         self._stream.start()
 
     async def play_api_audio(self, data: bytes) -> None:
         if self._stream is None:
             raise RuntimeError("SpeakerOutput.start() must be called first")
-        converted = resample_pcm16_mono(data, API_SAMPLE_RATE, self.sample_rate)
-        await asyncio.to_thread(self._stream.write, converted)
+        self._queue_audio(self._translated, data, 1.0)
+
+    async def play_original_audio(self, data: bytes, volume_percent: int) -> None:
+        if self._stream is None:
+            raise RuntimeError("SpeakerOutput.start() must be called first")
+        gain = max(0.0, min(float(volume_percent), 100.0)) / 100.0
+        if gain <= 0.0:
+            return
+        self._queue_audio(self._original, data, gain)
 
     def close(self) -> None:
         if self._stream is not None:
             self._stream.stop()
             self._stream.close()
             self._stream = None
+        with self._lock:
+            self._translated.clear()
+            self._original.clear()
+
+    def _queue_audio(self, buffer: deque[np.ndarray], data: bytes, gain: float) -> None:
+        converted = resample_pcm16_mono(data, API_SAMPLE_RATE, self.sample_rate)
+        samples = np.frombuffer(converted, dtype="<i2").astype(np.float32)
+        if samples.size == 0:
+            return
+        samples *= gain
+        with self._lock:
+            buffer.append(samples)
+            self._trim_buffer(buffer)
+
+    def _callback(self, outdata, frames, time, status) -> None:  # noqa: ANN001, ARG002
+        mixed = np.zeros(frames, dtype=np.float32)
+        with self._lock:
+            mixed += self._read_buffer(self._original, frames)
+            mixed += self._read_buffer(self._translated, frames)
+        clipped = np.clip(mixed, -32768, 32767).astype("<i2")
+        outdata[:] = clipped.tobytes()
+
+    def _trim_buffer(self, buffer: deque[np.ndarray]) -> None:
+        buffered = sum(chunk.size for chunk in buffer)
+        while buffered > self._max_buffer_samples and buffer:
+            removed = buffer.popleft()
+            buffered -= removed.size
+
+    @staticmethod
+    def _read_buffer(buffer: deque[np.ndarray], frames: int) -> np.ndarray:
+        output = np.zeros(frames, dtype=np.float32)
+        offset = 0
+        while offset < frames and buffer:
+            chunk = buffer[0]
+            take = min(frames - offset, chunk.size)
+            output[offset : offset + take] = chunk[:take]
+            offset += take
+            if take == chunk.size:
+                buffer.popleft()
+            else:
+                buffer[0] = chunk[take:]
+        return output
