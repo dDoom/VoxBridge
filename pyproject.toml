@@ -3,9 +3,9 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "voxbridge"
-version = "0.1.4"
-description = "Cross-platform GUI realtime speech translator for virtual audio routing."
+name = "echopilot"
+version = "0.2.0"
+description = "AI companion for calls with real-time translation, co-pilot hints, avatar sync, and mobile bridge."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -13,6 +13,11 @@ dependencies = [
     "PySide6>=6.7",
     "sounddevice>=0.4.6",
     "websockets>=12.0,<16",
+    "pymupdf>=1.23",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "python-docx>=1.1",
+    "pyvirtualcam>=0.11",
 ]
 
 [project.optional-dependencies]
@@ -21,7 +26,7 @@ build = [
 ]
 
 [project.scripts]
-voxbridge = "voxbridge.__main__:main"
+echopilot = "echopilot.__main__:main"
 
 [tool.setuptools.packages.find]
-include = ["voxbridge*"]
+include = ["echopilot*"]
