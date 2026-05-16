@@ -1,6 +1,7 @@
 """Avatar tab — virtual camera with lip-sync delay."""
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QGroupBox,
@@ -44,7 +45,7 @@ class AvatarTab(QWidget):
             "QLabel { background:#0a0a0f; border:1px solid #1e1e2d; border-radius:8px; "
             "color:#94a3b8; font-size:12px; }"
         )
-        self._preview.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore[name-defined]
+        self._preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         p_layout.addWidget(self._preview)
         layout.addWidget(preview)
 
@@ -64,7 +65,7 @@ class AvatarTab(QWidget):
         # Delay
         delay_row = QHBoxLayout()
         delay_row.addWidget(QLabel("Delay:"))
-        self._delay_slider = QSlider(Qt.Orientation.Horizontal)  # type: ignore[name-defined]
+        self._delay_slider = QSlider(Qt.Orientation.Horizontal)
         self._delay_slider.setRange(0, 2000)
         self._delay_slider.setValue(500)
         delay_row.addWidget(self._delay_slider)

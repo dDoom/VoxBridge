@@ -79,6 +79,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:  # noqa: ANN001, N802
         self._translate_tab.cleanup()
+        self._copilot_tab.cleanup()
         super().closeEvent(event)
 
 

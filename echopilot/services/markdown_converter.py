@@ -42,11 +42,26 @@ class MarkdownConverter:
 
     def _from_docx(self, path: Path) -> str:
         try:
-            import docx2txt  # optional dep
-            raw = docx2txt.process(str(path))
+            from docx import Document  # provided by python-docx
+
+            doc = Document(str(path))
+            parts: list[str] = []
+
+            for paragraph in doc.paragraphs:
+                text = paragraph.text.strip()
+                if text:
+                    parts.append(text)
+
+            for table in doc.tables:
+                for row in table.rows:
+                    cells = [cell.text.strip() for cell in row.cells]
+                    if any(cells):
+                        parts.append(" | ".join(cells))
+
+            raw = "\n\n".join(parts)
             return self._truncate(raw)
-        except Exception:
-            return self._fallback_text(path, "DOCX extraction failed. Install python-docx or docx2txt.")
+        except Exception as exc:
+            return f"<!-- DOCX extraction failed: {exc}. Install python-docx. -->"
 
     def _from_text(self, path: Path) -> str:
         raw = path.read_text(encoding="utf-8", errors="ignore")
