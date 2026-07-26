@@ -17,7 +17,6 @@
 
 <p>
   <a href="https://github.com/dDoom/VoxBridge/releases/latest" class="btn btn-primary">⬇️ Download Latest Release</a>
-  <a href="https://ko-fi.com/ml_jedi" class="btn btn-secondary">☕ Buy me a coffee</a>
 </p>
 </div>
 
@@ -275,16 +274,6 @@ For a typical English ↔ Russian call:
 
 ---
 
-## ☕ Support the Project
-
-If you find VoxBridge useful, consider supporting further development:
-
-- **[GitHub Sponsors](https://github.com/sponsors/dDoom)** — Recurring monthly donations directly through GitHub (no fees).
-- **[Ko-fi](https://ko-fi.com/ml_jedi)** — One-time coffee contributions.
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ml_jedi)
-
----
 
 ## 📝 License
 
